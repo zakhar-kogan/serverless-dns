@@ -40,7 +40,7 @@ cleanup() {
   jobs -p > jobfile
   j=$(cat jobfile)
   echo "kill... $j"
-  kill -INT $j
+  kill -INT $j || true
   # does not work... jobs -p | xargs -r kill -9
   rm jobfile
 }
@@ -94,21 +94,26 @@ greqs() {
 
 if [ $runtime = "help" ] || [ $runtime = "h" ]; then
   echo "note: make sure node / deno / wrangler are in path";
-  echo "usage: $0 [node|deno|workers] [[p1|p2] [waitsec]]";
+  echo "usage: $0 [node|bun|deno|workers|fly] [[p1|p2|p3] [waitsec]]";
   exit 0;
 fi
 
-if [ $runtime = "deno" ] || [ $runtime = "d" ]; then
-  echo "note: deno v1.17+ required";
+if [ $runtime = "bun" ] || [ $runtime = "b" ]; then
+  echo "note: bun v1+ required";
+  echo "using `which bun`";
+  start="bun run src/server-node.js";
+elif [ $runtime = "deno" ] || [ $runtime = "d" ]; then
+  echo "note: deno v2+ required";
   echo "using `which deno`";
   start="deno run --unstable \
+           --allow-import \
            --allow-env \
            --allow-net \
            --allow-read \
            --allow-write \
            src/server-deno.ts";
 elif [ $runtime = "workers" ] || [ $runtime = "w" ]; then
-  echo "note: wrangler v1.16+ required";
+  echo "note: wrangler v1.40+ required";
   echo "using `which wrangler`";
   start="npx wrangler dev --local";
 elif [ $runtime = "fastly" ] || [ $runtime = "f" ]; then
@@ -121,7 +126,7 @@ elif [ $runtime = "fly" ] || [ $runtime = "ff" ]; then
   export NODE_OPTIONS="--trace-warnings --max-old-space-size=320 --heapsnapshot-signal=SIGUSR2 --heapsnapshot-near-heap-limit=2"
   start="node ./dist/fly.mjs"
 else
-  echo "note: nodejs v19+ required";
+  echo "note: nodejs v22+ required";
   echo "using `which node`";
   # verbose: NODE_DEBUG=http2,http,tls,net... ref: stackoverflow.com/a/46858827
   export NODE_OPTIONS="--trace-warnings --max-old-space-size=320 --heapsnapshot-signal=SIGUSR2 --heapsnapshot-near-heap-limit=2"
@@ -208,8 +213,8 @@ elif [ $profiler = "profile3" ] || [ $profiler = "p3" ]; then
     echo "Specify env QDOH path"
     exit 1
   fi
-  if [ $runtime != "node" ] && [ $runtime != "n" ]; then
-    echo "Profile3 only valid on Node"
+  if [ $runtime != "node" ] && [ $runtime != "n" ] && [ $runtime != "bun" ] && [ $runtime != "b" ]; then
+    echo "Profile3 only valid on Node & Bun"
     exit 1
   fi
 

@@ -9,7 +9,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { uid, stub } from "../commons/util.js";
+import { stub } from "../commons/util.js";
 
 /**
  * @typedef {'error'|'logpush'|'warn'|'info'|'timer'|'debug'} LogLevels
@@ -82,9 +82,6 @@ export default class Log {
   _resetLevel() {
     this.d = stub();
     this.debug = stub();
-    this.lapTime = stub();
-    this.startTime = stub();
-    this.endTime = stub();
     this.i = stub();
     this.info = stub();
     this.w = stub();
@@ -94,42 +91,29 @@ export default class Log {
   }
 
   withTags(...tags) {
-    const that = this;
     return {
-      lapTime: (n, ...r) => {
-        return that.lapTime(n, ...tags, ...r);
-      },
-      startTime: (n, ...r) => {
-        const tid = that.startTime(n);
-        that.d(that.now() + " T", ...tags, "create", tid, ...r);
-        return tid;
-      },
-      endTime: (n, ...r) => {
-        that.d(that.now() + " T", ...tags, "end", n, ...r);
-        return that.endTime(n);
-      },
       d: (...args) => {
-        that.d(that.now() + " D", ...tags, ...args);
+        this.d(this.now() + " D", ...tags, ...args);
       },
       i: (...args) => {
-        that.i(that.now() + " I", ...tags, ...args);
+        this.i(this.now() + " I", ...tags, ...args);
       },
       w: (...args) => {
-        that.w(that.now() + " W", ...tags, ...args);
+        this.w(this.now() + " W", ...tags, ...args);
       },
       e: (...args) => {
-        that.e(that.now() + " E", ...tags, ...args);
+        this.e(this.now() + " E", ...tags, ...args);
       },
       q: (...args) => {
-        that.l(that.now() + " Q", ...tags, ...args);
+        this.l(this.now() + " Q", ...tags, ...args);
       },
       qStart: (...args) => {
-        that.l(that.now() + " Q", ...tags, that.border());
-        that.l(that.now() + " Q", ...tags, ...args);
+        this.l(this.now() + " Q", ...tags, this.border());
+        this.l(this.now() + " Q", ...tags, ...args);
       },
       qEnd: (...args) => {
-        that.l(that.now() + " Q", ...tags, ...args);
-        that.l(that.now() + " Q", ...tags, that.border());
+        this.l(this.now() + " Q", ...tags, ...args);
+        this.l(this.now() + " Q", ...tags, this.border());
       },
       tag: (t) => {
         tags.push(t);
@@ -163,13 +147,7 @@ export default class Log {
         this.d = console.debug;
         this.debug = console.debug;
       case "timer":
-        this.lapTime = console.timeLog || stub(); // Stubbing required for Fastly as they do not currently support this method.
-        this.startTime = function (name) {
-          name = uid(name);
-          if (console.time) console.time(name);
-          return name;
-        };
-        this.endTime = console.timeEnd || stub(); // Stubbing required for Fastly as they do not currently support this method.
+      // deprecated; fallthrough
       case "info":
         this.i = console.info;
         this.info = console.info;
